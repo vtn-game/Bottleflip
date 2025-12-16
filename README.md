@@ -1,11 +1,13 @@
 # Bottle Flip
 
-カジュアルみんわい系コミュニケーションゲーム
+カジュアルみんわい系コミュニケーションゲーム（クライアント側）
 
 ## 概要
 
 スマホを振ってボトルを投げ、成功したらコメントを残す。
 みんなで一つの世界を共有するコミュニケーションゲーム。
+
+**このリポジトリはUnityクライアント（Web/母艦）を管理します。サーバーは別プロジェクトです。**
 
 ## システム構成
 
@@ -13,6 +15,7 @@
 ┌─────────────────┐     WebSocket      ┌─────────────────┐
 │   スマホ(Web)   │ ←────────────────→ │    Server       │
 │   unityWeb      │                    │   (Node.js)     │
+│  [このリポジトリ]│                    │  [別プロジェクト] │
 └─────────────────┘                    └────────┬────────┘
                                                 │
                                                 │ WebSocket
@@ -20,7 +23,7 @@
                                        ┌────────┴────────┐
                                        │   母艦アプリ    │
                                        │   unityMain     │
-                                       │  (配信・表示)   │
+                                       │  [このリポジトリ]│
                                        └─────────────────┘
 ```
 
@@ -28,14 +31,6 @@
 
 ```
 /
-├── server/              # Node.js WebSocketサーバー
-│   ├── src/
-│   │   ├── main.ts
-│   │   ├── config/
-│   │   └── server/
-│   ├── package.json
-│   └── tsconfig.json
-│
 ├── unityShared/         # Unity共通ライブラリ
 │   └── Runtime/
 │       ├── Network/     # WebSocket通信
@@ -58,26 +53,12 @@
 └── spec/                # 仕様書
     ├── unityWeb/
     ├── unityMain/
-    └── shared/
+    └── shared/          # 通信プロトコル仕様含む
 ```
 
 ## セットアップ
 
-### 1. サーバー
-
-```bash
-cd server
-npm install
-npm run build
-npm start
-```
-
-開発時:
-```bash
-npm run dev
-```
-
-### 2. Unity共通ライブラリ
+### 1. Unity共通ライブラリ
 
 1. NativeWebSocketをインストール
    - Package Manager > Add package from git URL
@@ -87,14 +68,14 @@ npm run dev
 
 3. unityShared フォルダを各Unityプロジェクトの Packages にシンボリックリンク
 
-### 3. unityWeb (WebGLアプリ)
+### 2. unityWeb (WebGLアプリ)
 
 1. Unity 2022.3 LTS以上で開く
 2. Build Settings > WebGL を選択
 3. Player Settings で圧縮形式を設定
 4. Build
 
-### 4. unityMain (母艦アプリ)
+### 3. unityMain (母艦アプリ)
 
 1. Unity 2022.3 LTS以上で開く
 2. Build Settings > Windows/Mac/Linux を選択
@@ -102,11 +83,13 @@ npm run dev
 
 ## 起動順序
 
-1. サーバー起動
+1. サーバー起動（別プロジェクト）
 2. 母艦アプリ起動（サーバーに自動接続）
 3. スマホでWebアプリにアクセス
 
 ## 通信プロトコル
+
+詳細は `spec/shared/02_communication.md` を参照。
 
 ### WebSocket ポート
 - HTTP: 8080

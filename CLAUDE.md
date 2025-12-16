@@ -9,15 +9,16 @@
 - みんなでボトルを投げて自分の「痕跡」を残す
 
 ### システム構成
-- **server**: Node.js WebSocketサーバー（AWS上で稼働）
-- **unityWeb**: スマホ向けWebアプリ（Unity WebGL、同サーバー上で配信）
-- **unityMain**: 母艦アプリ（Unity Standalone、配信・表示用）
-- **unityShared**: Unity共通ライブラリ
+- **server**: Node.js WebSocketサーバー（別プロジェクトで管理、AWS上で稼働）
+- **unityWeb**: スマホ向けWebアプリ（Unity WebGL）← このプロジェクト
+- **unityMain**: 母艦アプリ（Unity Standalone）← このプロジェクト
+- **unityShared**: Unity共通ライブラリ ← このプロジェクト
 
 ### 通信フロー
 ```
 スマホ(Web) ←→ Server(Node.js) ←→ 母艦アプリ
               WebSocket           WebSocket
+           （別プロジェクト）
 ```
 
 ## ディレクトリ構造
@@ -26,13 +27,6 @@
 /
 ├── CLAUDE.md              # このファイル（AI用ルール）
 ├── README.md              # プロジェクト概要・セットアップ手順
-├── server/                # Node.js WebSocketサーバー
-│   ├── src/
-│   │   ├── main.ts
-│   │   ├── config/
-│   │   └── server/
-│   ├── package.json
-│   └── tsconfig.json
 ├── unityShared/           # Unity共通ライブラリ
 │   └── Runtime/
 │       ├── Network/       # WebSocket通信基盤
@@ -53,22 +47,13 @@
     └── shared/
 ```
 
+※ サーバーコードは別プロジェクトで管理。通信仕様は `spec/shared/02_communication.md` を参照。
+
 ## 開発ルール
 
 ### 全般
 - コメント: 日本語OK、複雑なロジックには必ずコメント
-
-### server（Node.jsサーバー）
-- **出力先**: `/server/` ディレクトリ
-- **言語**: TypeScript
-- **ランタイム**: Node.js 22.x LTS
-- **通信**: ws (WebSocket)、Express (HTTP)
-- **ポート**: HTTP=8080, WebSocket=8081
-
-#### 注意点
-- 母艦とWebアプリの中継役として機能
-- ゲームロジックは母艦側で処理、サーバーはメッセージルーティングのみ
-- 状態管理は最小限に（接続管理程度）
+- サーバーは別プロジェクト（通信仕様は `spec/shared/02_communication.md` 参照）
 
 ### Unity全般
 - 言語: C# (Unity 2022.3 LTS以上推奨)
