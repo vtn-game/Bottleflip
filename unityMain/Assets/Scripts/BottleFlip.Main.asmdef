@@ -1,0 +1,16 @@
+{
+    "name": "BottleFlip.Main",
+    "rootNamespace": "BottleFlip.Main",
+    "references": [
+        "BottleFlip.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
