@@ -118,13 +118,23 @@ namespace BottleFlip.Web.Core
         }
 
         /// <summary>
-        /// ボトル投げ送信
+        /// ボトル投げ送信（強度のみ）
         /// </summary>
         public void SendThrow(string bottleId, float intensity)
         {
             var msg = new ThrowMessage(bottleId, intensity);
             _ = Send(msg);
             Debug.Log($"[WebNetwork] Sent throw: {bottleId}, intensity={intensity:F2}");
+        }
+
+        /// <summary>
+        /// ボトル投げ送信（加速度ベクトル付き）
+        /// </summary>
+        public void SendThrow(string bottleId, Vector3 acceleration)
+        {
+            var msg = new ThrowMessage(bottleId, acceleration);
+            _ = Send(msg);
+            Debug.Log($"[WebNetwork] Sent throw: {bottleId}, accel={acceleration}");
         }
 
         /// <summary>

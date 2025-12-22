@@ -50,6 +50,40 @@ namespace BottleFlip.Network
     // ========== ゲームプレイメッセージ ==========
 
     /// <summary>
+    /// 加速度ベクトル（JSON シリアライズ用）
+    /// </summary>
+    [Serializable]
+    public class AccelerationVector
+    {
+        public float x;
+        public float y;
+        public float z;
+
+        public AccelerationVector() { }
+
+        public AccelerationVector(float x, float y, float z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public AccelerationVector(UnityEngine.Vector3 v)
+        {
+            this.x = v.x;
+            this.y = v.y;
+            this.z = v.z;
+        }
+
+        public UnityEngine.Vector3 ToVector3()
+        {
+            return new UnityEngine.Vector3(x, y, z);
+        }
+
+        public float Magnitude => UnityEngine.Mathf.Sqrt(x * x + y * y + z * z);
+    }
+
+    /// <summary>
     /// ボトル投げメッセージ
     /// </summary>
     [Serializable]
@@ -62,6 +96,17 @@ namespace BottleFlip.Network
             type = "throw";
             data = new ThrowData { bottleId = bottleId, intensity = intensity };
         }
+
+        public ThrowMessage(string bottleId, UnityEngine.Vector3 acceleration)
+        {
+            type = "throw";
+            data = new ThrowData
+            {
+                bottleId = bottleId,
+                intensity = acceleration.magnitude,
+                acceleration = new AccelerationVector(acceleration)
+            };
+        }
     }
 
     [Serializable]
@@ -71,6 +116,20 @@ namespace BottleFlip.Network
         public string playerName;
         public string bottleId;
         public float intensity;
+        public AccelerationVector acceleration;
+
+        /// <summary>
+        /// 加速度ベクトルをVector3として取得
+        /// </summary>
+        public UnityEngine.Vector3 GetAcceleration()
+        {
+            if (acceleration != null)
+            {
+                return acceleration.ToVector3();
+            }
+            // 後方互換: accelerationがない場合はintensityから上方向ベクトルを生成
+            return new UnityEngine.Vector3(0, intensity, 0);
+        }
     }
 
     /// <summary>

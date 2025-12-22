@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using BottleFlip.Web.Core;
 using BottleFlip.Web.Features;
 using BottleFlip.Network;
@@ -25,8 +24,13 @@ namespace BottleFlip.Web.Screens
         [SerializeField] private ShakeDetector shakeDetector;
         [SerializeField] private Image shakeIndicator;
 
+        [Header("Permission")]
+        [SerializeField] private GameObject permissionPanel;
+        [SerializeField] private Button permissionButton;
+
         [Header("Debug")]
         [SerializeField] private Button debugThrowButton;
+        [SerializeField] private Text debugAccelText;
 
         private bool canThrow = true;
 
@@ -41,22 +45,38 @@ namespace BottleFlip.Web.Screens
             CleanupEvents();
         }
 
+        private void Update()
+        {
+            // デバッグ用: 加速度表示
+            if (debugAccelText != null && shakeDetector != null)
+            {
+                var accel = shakeDetector.CurrentAcceleration;
+                debugAccelText.text = $"Accel: ({accel.x:F2}, {accel.y:F2}, {accel.z:F2})";
+            }
+        }
+
         private void SetupUI()
         {
             // プレイヤー情報表示
-            if (GameManager.Instance.LocalPlayer != null)
+            if (GameManager.Instance != null && GameManager.Instance.LocalPlayer != null)
             {
-                playerNameText.text = GameManager.Instance.LocalPlayer.playerName;
+                if (playerNameText != null)
+                    playerNameText.text = GameManager.Instance.LocalPlayer.playerName;
             }
 
-            UpdateCoinDisplay(GameManager.Instance.Coins);
+            if (GameManager.Instance != null)
+                UpdateCoinDisplay(GameManager.Instance.Coins);
+
             UpdateBottleDisplay();
 
-            hintText.text = "スマホを振って投げよう！";
+            if (hintText != null)
+                hintText.text = "スマホを振って投げよう！";
 
             // ボタン設定
-            changeBottleButton.onClick.AddListener(OnChangeBottleClicked);
-            gachaButton.onClick.AddListener(OnGachaClicked);
+            if (changeBottleButton != null)
+                changeBottleButton.onClick.AddListener(OnChangeBottleClicked);
+            if (gachaButton != null)
+                gachaButton.onClick.AddListener(OnGachaClicked);
 
             // デバッグボタン
             if (debugThrowButton != null)
@@ -66,23 +86,42 @@ namespace BottleFlip.Web.Screens
                 debugThrowButton.gameObject.SetActive(false);
 #endif
             }
+
+            // デバッグテキスト
+            if (debugAccelText != null)
+            {
+#if !UNITY_EDITOR
+                debugAccelText.gameObject.SetActive(false);
+#endif
+            }
+
+            // パーミッションパネル（初期非表示）
+            if (permissionPanel != null)
+                permissionPanel.SetActive(false);
+
+            if (permissionButton != null)
+                permissionButton.onClick.AddListener(OnPermissionButtonClicked);
         }
 
         private void SetupEvents()
         {
             // コイン変更イベント
-            GameManager.Instance.OnCoinsChanged += UpdateCoinDisplay;
+            if (GameManager.Instance != null)
+                GameManager.Instance.OnCoinsChanged += UpdateCoinDisplay;
 
-            // 振り検知イベント
+            // 振り検知イベント（加速度ベクトル付き）
             if (shakeDetector != null)
             {
-                shakeDetector.OnShakeDetected += OnShakeDetected;
+                shakeDetector.OnShakeDetectedWithVector += OnShakeDetectedWithVector;
                 shakeDetector.OnShakeStarted += OnShakeStarted;
                 shakeDetector.OnShakeEnded += OnShakeEnded;
+                shakeDetector.OnPermissionRequired += OnPermissionRequired;
+                shakeDetector.OnPermissionResult += OnPermissionResultReceived;
             }
 
             // ネットワークイベント
-            WebNetworkManager.Instance.OnThrowResult += OnThrowResult;
+            if (WebNetworkManager.Instance != null)
+                WebNetworkManager.Instance.OnThrowResult += OnThrowResult;
         }
 
         private void CleanupEvents()
@@ -94,9 +133,11 @@ namespace BottleFlip.Web.Screens
 
             if (shakeDetector != null)
             {
-                shakeDetector.OnShakeDetected -= OnShakeDetected;
+                shakeDetector.OnShakeDetectedWithVector -= OnShakeDetectedWithVector;
                 shakeDetector.OnShakeStarted -= OnShakeStarted;
                 shakeDetector.OnShakeEnded -= OnShakeEnded;
+                shakeDetector.OnPermissionRequired -= OnPermissionRequired;
+                shakeDetector.OnPermissionResult -= OnPermissionResultReceived;
             }
 
             if (WebNetworkManager.Instance != null)
@@ -107,13 +148,15 @@ namespace BottleFlip.Web.Screens
 
         private void UpdateCoinDisplay(int coins)
         {
-            coinText.text = $"{coins} コイン";
+            if (coinText != null)
+                coinText.text = $"{coins} コイン";
         }
 
         private void UpdateBottleDisplay()
         {
             // TODO: ボトルデータベースから情報取得
-            bottleNameText.text = "ペットボトル";
+            if (bottleNameText != null)
+                bottleNameText.text = "ペットボトル";
         }
 
         // ========== イベントハンドラー ==========
@@ -134,50 +177,126 @@ namespace BottleFlip.Web.Screens
             }
         }
 
-        private void OnShakeDetected(float intensity)
+        /// <summary>
+        /// パーミッションが必要な場合（iOS 13+）
+        /// </summary>
+        private void OnPermissionRequired()
+        {
+            if (permissionPanel != null)
+            {
+                permissionPanel.SetActive(true);
+            }
+
+            if (hintText != null)
+            {
+                hintText.text = "センサーを使用するには許可が必要です";
+            }
+
+            Debug.Log("[MainScreen] Permission required - showing permission UI");
+        }
+
+        /// <summary>
+        /// パーミッションボタンクリック
+        /// </summary>
+        private void OnPermissionButtonClicked()
+        {
+            if (shakeDetector != null)
+            {
+                shakeDetector.RequestPermission();
+            }
+        }
+
+        /// <summary>
+        /// パーミッション結果受信
+        /// </summary>
+        private void OnPermissionResultReceived(bool granted)
+        {
+            if (permissionPanel != null)
+            {
+                permissionPanel.SetActive(false);
+            }
+
+            if (granted)
+            {
+                if (hintText != null)
+                {
+                    hintText.text = "スマホを振って投げよう！";
+                }
+                Debug.Log("[MainScreen] Permission granted - ready to throw");
+            }
+            else
+            {
+                if (hintText != null)
+                {
+                    hintText.text = "センサーが使用できません";
+                }
+                Debug.LogWarning("[MainScreen] Permission denied");
+            }
+        }
+
+        /// <summary>
+        /// 振り検知（加速度ベクトル付き）
+        /// </summary>
+        private void OnShakeDetectedWithVector(ShakeResult result)
         {
             if (!canThrow) return;
 
-            ThrowBottle(intensity);
+            // オーバーレイ画面が開いている場合は投げない
+            if (ScreenManager.Instance != null && ScreenManager.Instance.HasOpenOverlay)
+            {
+                return;
+            }
+
+            ThrowBottle(result.Acceleration);
         }
 
-        private void ThrowBottle(float intensity)
+        /// <summary>
+        /// ボトル投げ（加速度ベクトル版）
+        /// </summary>
+        private void ThrowBottle(Vector3 acceleration)
         {
             canThrow = false;
 
-            var bottleId = GameManager.Instance.SelectedBottleId;
-            WebNetworkManager.Instance.SendThrow(bottleId, intensity);
+            var bottleId = GameManager.Instance?.SelectedBottleId ?? "B001";
+            WebNetworkManager.Instance?.SendThrow(bottleId, acceleration);
 
-            hintText.text = "投げた！結果を待っています...";
+            if (hintText != null)
+                hintText.text = "投げた！結果を待っています...";
 
-            Debug.Log($"[MainScreen] Threw bottle: {bottleId}, intensity: {intensity:F2}");
+            Debug.Log($"[MainScreen] Threw bottle: {bottleId}, accel: {acceleration}");
         }
 
         private void OnThrowResult(ThrowResultData result)
         {
-            // コメント画面に遷移
-            // 結果情報を渡す
+            // 結果情報を保存
             PlayerPrefs.SetInt("LastThrowSuccess", result.success ? 1 : 0);
             PlayerPrefs.SetInt("LastThrowCoins", result.coinsEarned);
 
-            SceneManager.LoadScene("Comment");
+            // コメント画面をオーバーレイで表示
+            ScreenManager.Instance?.OpenScreen(ScreenType.Comment);
         }
 
         private void OnChangeBottleClicked()
         {
-            SceneManager.LoadScene("BottleSelect");
+            ScreenManager.Instance?.OpenScreen(ScreenType.BottleSelect);
         }
 
         private void OnGachaClicked()
         {
-            SceneManager.LoadScene("Gacha");
+            ScreenManager.Instance?.OpenScreen(ScreenType.Gacha);
         }
 
         private void OnDebugThrowClicked()
         {
             if (shakeDetector != null)
             {
-                shakeDetector.TriggerManualShake(0.5f);
+                // ランダムな加速度ベクトルでテスト
+                var randomAccel = new Vector3(
+                    Random.Range(-1f, 1f),
+                    Random.Range(2f, 5f),
+                    Random.Range(-0.5f, 0.5f)
+                );
+                shakeDetector.TriggerManualShake(randomAccel);
             }
         }
 
@@ -187,7 +306,8 @@ namespace BottleFlip.Web.Screens
         public void EnableThrow()
         {
             canThrow = true;
-            hintText.text = "スマホを振って投げよう！";
+            if (hintText != null)
+                hintText.text = "スマホを振って投げよう！";
         }
     }
 }
