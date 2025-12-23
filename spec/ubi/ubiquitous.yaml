@@ -1,0 +1,159 @@
+# ユビキタス言語 - ボトルフリップ
+# プロジェクト内で統一して使用する用語定義
+
+# === システム構成 ===
+systems:
+  unityWeb:
+    name: "Webアプリ"
+    description: "スマホ向けWebGLアプリ。振り検知とガチャを担当"
+    alias: ["スマホアプリ", "クライアント", "Web側"]
+
+  unityMain:
+    name: "母艦アプリ"
+    description: "配信用Standaloneアプリ。物理演算と判定を担当"
+    alias: ["メインアプリ", "母艦", "配信側"]
+
+  server:
+    name: "サーバー"
+    description: "Node.js WebSocketサーバー。通信の中継を担当"
+    alias: ["中継サーバー", "WebSocketサーバー"]
+
+# === ゲームプレイ ===
+gameplay:
+  bottle_flip:
+    name: "ボトルフリップ"
+    description: "ボトルを投げて立たせるアクション"
+    alias: ["フリップ", "投げ"]
+
+  throw:
+    name: "投げる"
+    description: "スマホを振ってボトルを投げるアクション"
+    alias: ["振り", "シェイク"]
+
+  success:
+    name: "成功"
+    description: "ボトルが直立状態で安定した結果"
+    alias: ["クリア", "立った"]
+
+  fail:
+    name: "失敗"
+    description: "ボトルが倒れた結果"
+    alias: ["ミス", "倒れた"]
+
+  comment:
+    name: "コメント"
+    description: "投げ後に残すメッセージ。母艦画面に表示される"
+    alias: ["メッセージ", "一言"]
+
+# === アイテム ===
+items:
+  bottle:
+    name: "ボトル"
+    description: "投げる対象物。種類により見た目や特性が異なる"
+    alias: ["ペットボトル", "瓶"]
+
+  coin:
+    name: "コイン"
+    description: "ゲーム内通貨。成功で獲得、ガチャで消費"
+    alias: ["通貨", "ポイント"]
+
+# === システム機能 ===
+features:
+  gacha:
+    name: "ガチャ"
+    description: "コインを消費してランダムにボトルを獲得する機能"
+    alias: ["抽選", "くじ"]
+
+  shake_detection:
+    name: "振り検知"
+    description: "スマホの加速度センサーで振りを検出する機能"
+    alias: ["シェイク検知", "加速度検知"]
+
+  physics_simulation:
+    name: "物理演算"
+    description: "母艦側でのボトルの挙動シミュレーション"
+    alias: ["物理シミュ", "Rigidbody"]
+
+# === 通信 ===
+communication:
+  throw_event:
+    name: "投げイベント"
+    description: "Web→Server→母艦への投げ情報送信"
+    type: "c2s_throw"
+
+  result_event:
+    name: "結果イベント"
+    description: "母艦→Server→Webへの判定結果送信"
+    type: "s2c_throw_result"
+
+  comment_event:
+    name: "コメントイベント"
+    description: "Web→Server→母艦へのコメント送信"
+    type: "c2s_comment"
+
+# === 画面 ===
+screens:
+  main_screen:
+    name: "メイン画面"
+    description: "ボトルを投げるメイン画面"
+    id: "WEB-SCR-002"
+
+  gacha_screen:
+    name: "ガチャ画面"
+    description: "ガチャを回す画面（オーバーレイ）"
+    id: "WEB-SCR-004"
+
+  bottle_select_screen:
+    name: "ボトル選択画面"
+    description: "使用ボトルを選ぶ画面（オーバーレイ）"
+    id: "WEB-SCR-003"
+
+  comment_screen:
+    name: "コメント画面"
+    description: "投げ後のコメント入力画面（オーバーレイ）"
+    id: "WEB-SCR-006"
+
+# === 状態 ===
+states:
+  connected:
+    name: "接続中"
+    description: "サーバーとWebSocket接続が確立している状態"
+
+  disconnected:
+    name: "切断"
+    description: "サーバーとの接続が切れている状態"
+
+  judging:
+    name: "判定中"
+    description: "ボトルの成否を判定している最中"
+
+  idle:
+    name: "待機中"
+    description: "次の投げを待っている状態"
+
+# === レアリティ ===
+rarity:
+  common:
+    name: "コモン"
+    symbol: "★"
+    level: 1
+
+  uncommon:
+    name: "アンコモン"
+    symbol: "★★"
+    level: 2
+
+  rare:
+    name: "レア"
+    symbol: "★★★"
+    level: 3
+
+  super_rare:
+    name: "スーパーレア"
+    symbol: "★★★★"
+    level: 4
+
+  ultra_rare:
+    name: "ウルトラレア"
+    symbol: "★★★★★"
+    level: 5

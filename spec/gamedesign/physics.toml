@@ -1,0 +1,64 @@
+# 物理パラメータ定義
+# ボトルフリップの物理演算に使用するパラメータ
+
+[velocity]
+# 加速度から速度への変換係数
+acceleration_to_velocity_scale = 1.5
+
+# 上方向への基本速度
+base_upward_speed = 3.0
+
+# 上方向への追加速度係数
+upward_speed_multiplier = 2.0
+
+# 水平方向の速度スケール
+horizontal_scale = 0.5
+
+# 最大水平速度
+max_horizontal_speed = 3.0
+
+# 最大垂直速度
+max_vertical_speed = 10.0
+
+[rotation]
+# 基本回転速度 (rad/s)
+base_rotation_speed = 6.0
+
+# 加速度による追加回転係数
+rotation_multiplier = 3.0
+
+# ランダム回転の範囲
+random_rotation_range = 1.5
+
+[judge]
+# 成功と判定する最大傾き角度（度）
+upright_threshold = 15.0
+
+# 安定と判定する速度しきい値
+stable_velocity_threshold = 0.1
+
+# 安定状態を維持する必要時間（秒）
+stable_time = 0.5
+
+# 判定タイムアウト時間（秒）
+judge_timeout = 10.0
+
+[rigidbody]
+# ボトルの質量
+mass = 0.5
+
+# 空気抵抗
+drag = 0.5
+
+# 回転抵抗
+angular_drag = 0.5
+
+[shake_detection]
+# 振り検知のしきい値（G）
+threshold = 2.0
+
+# クールダウン時間（秒）
+cooldown = 1.0
+
+# 加速度のスムージング係数
+smoothing = 0.5
