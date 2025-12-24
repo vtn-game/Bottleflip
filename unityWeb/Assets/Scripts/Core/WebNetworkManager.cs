@@ -156,5 +156,15 @@ namespace BottleFlip.Web.Core
             _ = Send(msg);
             Debug.Log("[WebNetwork] Sent skip comment");
         }
+
+        /// <summary>
+        /// 台パン送信（机を叩いてボトルを跳ねさせる）
+        /// </summary>
+        public void SendTableSlap()
+        {
+            var msg = new TableSlapMessage();
+            _ = Send(msg);
+            Debug.Log("[WebNetwork] Sent table slap");
+        }
     }
 }

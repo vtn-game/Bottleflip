@@ -16,6 +16,7 @@ namespace BottleFlip.Main.Core
         public event Action<ThrowData> OnThrowReceived;
         public event Action<CommentData> OnCommentReceived;
         public event Action<string> OnCommentSkipped;
+        public event Action<TableSlapData> OnTableSlapReceived;
 
         private bool isRegistered = false;
         public bool IsRegistered => isRegistered;
@@ -66,6 +67,10 @@ namespace BottleFlip.Main.Core
 
                 case "skip_comment":
                     HandleSkipComment(json);
+                    break;
+
+                case "table_slap":
+                    HandleTableSlap(json);
                     break;
 
                 case "pong":
@@ -130,6 +135,13 @@ namespace BottleFlip.Main.Core
             var msg = MessageParser.Parse<SkipCommentMessage>(json);
             Debug.Log($"[MainNetwork] Comment skipped by {msg.data.playerId}");
             OnCommentSkipped?.Invoke(msg.data.playerId);
+        }
+
+        private void HandleTableSlap(string json)
+        {
+            var msg = MessageParser.Parse<TableSlapMessage>(json);
+            Debug.Log($"[MainNetwork] Table slap from {msg.data.playerName}");
+            OnTableSlapReceived?.Invoke(msg.data);
         }
 
         /// <summary>

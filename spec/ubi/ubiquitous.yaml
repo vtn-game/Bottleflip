@@ -45,6 +45,11 @@ gameplay:
     description: "投げ後に残すメッセージ。母艦画面に表示される"
     alias: ["メッセージ", "一言"]
 
+  table_slap:
+    name: "台パン"
+    description: "判定中に机を叩いてボトルを跳ねさせるアクション"
+    alias: ["テーブルスラップ", "叩く"]
+
 # === アイテム ===
 items:
   bottle:
@@ -90,6 +95,11 @@ communication:
     name: "コメントイベント"
     description: "Web→Server→母艦へのコメント送信"
     type: "c2s_comment"
+
+  table_slap_event:
+    name: "台パンイベント"
+    description: "Web→Server→母艦への台パン送信"
+    type: "c2s_table_slap"
 
 # === 画面 ===
 screens:

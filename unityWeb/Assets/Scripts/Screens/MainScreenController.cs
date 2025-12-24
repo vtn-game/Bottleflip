@@ -28,11 +28,18 @@ namespace BottleFlip.Web.Screens
         [SerializeField] private GameObject permissionPanel;
         [SerializeField] private Button permissionButton;
 
+        [Header("Table Slap")]
+        [SerializeField] private Button tableSlapButton;
+        [SerializeField] private Text slapCountText;
+        [SerializeField] private int maxSlapCount = 3;
+
         [Header("Debug")]
         [SerializeField] private Button debugThrowButton;
         [SerializeField] private Text debugAccelText;
 
         private bool canThrow = true;
+        private int _remainingSlapCount = 0;
+        private bool _isWaitingResult = false;
 
         private void Start()
         {
@@ -101,6 +108,15 @@ namespace BottleFlip.Web.Screens
 
             if (permissionButton != null)
                 permissionButton.onClick.AddListener(OnPermissionButtonClicked);
+
+            // 台パンボタン
+            if (tableSlapButton != null)
+            {
+                tableSlapButton.onClick.AddListener(OnTableSlapClicked);
+                tableSlapButton.gameObject.SetActive(false); // 初期は非表示
+            }
+
+            UpdateSlapCountDisplay();
         }
 
         private void SetupEvents()
@@ -256,24 +272,86 @@ namespace BottleFlip.Web.Screens
         private void ThrowBottle(Vector3 acceleration)
         {
             canThrow = false;
+            _isWaitingResult = true;
+
+            // 台パン回数をリセット
+            _remainingSlapCount = maxSlapCount;
+            UpdateSlapCountDisplay();
+
+            // 台パンボタンを表示
+            if (tableSlapButton != null)
+            {
+                tableSlapButton.gameObject.SetActive(true);
+                tableSlapButton.interactable = true;
+            }
 
             var bottleId = GameManager.Instance?.SelectedBottleId ?? "B001";
             WebNetworkManager.Instance?.SendThrow(bottleId, acceleration);
 
             if (hintText != null)
-                hintText.text = "投げた！結果を待っています...";
+                hintText.text = "投げた！台パンでボトルを跳ねさせろ！";
 
             Debug.Log($"[MainScreen] Threw bottle: {bottleId}, accel: {acceleration}");
         }
 
         private void OnThrowResult(ThrowResultData result)
         {
+            _isWaitingResult = false;
+
+            // 台パンボタンを非表示
+            if (tableSlapButton != null)
+            {
+                tableSlapButton.gameObject.SetActive(false);
+            }
+
             // 結果情報を保存
             PlayerPrefs.SetInt("LastThrowSuccess", result.success ? 1 : 0);
             PlayerPrefs.SetInt("LastThrowCoins", result.coinsEarned);
 
             // コメント画面をオーバーレイで表示
             ScreenManager.Instance?.OpenScreen(ScreenType.Comment);
+        }
+
+        // ========== 台パン関連 ==========
+
+        /// <summary>
+        /// 台パンボタンクリック
+        /// </summary>
+        private void OnTableSlapClicked()
+        {
+            if (!_isWaitingResult || _remainingSlapCount <= 0)
+            {
+                return;
+            }
+
+            // 台パン送信
+            WebNetworkManager.Instance?.SendTableSlap();
+
+            // 回数減少
+            _remainingSlapCount--;
+            UpdateSlapCountDisplay();
+
+            // 回数が0になったらボタン無効化
+            if (_remainingSlapCount <= 0)
+            {
+                if (tableSlapButton != null)
+                {
+                    tableSlapButton.interactable = false;
+                }
+            }
+
+            Debug.Log($"[MainScreen] Table slap! Remaining: {_remainingSlapCount}");
+        }
+
+        /// <summary>
+        /// 台パン回数表示を更新
+        /// </summary>
+        private void UpdateSlapCountDisplay()
+        {
+            if (slapCountText != null)
+            {
+                slapCountText.text = $"台パン: {_remainingSlapCount}/{maxSlapCount}";
+            }
         }
 
         private void OnChangeBottleClicked()

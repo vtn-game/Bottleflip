@@ -48,6 +48,20 @@ namespace BottleFlip.Main.Features
         [Tooltip("判定タイムアウト時間")]
         [SerializeField] private float judgeTimeout = 10f;
 
+        [Header("Table Slap Settings")]
+        [Tooltip("台パンの最大回数")]
+        [SerializeField] private int maxSlapCount = 3;
+        [Tooltip("台パンで与える上向きの力")]
+        [SerializeField] private float slapUpwardForce = 3.0f;
+        [Tooltip("台パンで与えるランダムな水平力の範囲")]
+        [SerializeField] private float slapHorizontalForceRange = 1.0f;
+        [Tooltip("台パンで与える回転力")]
+        [SerializeField] private float slapTorqueForce = 2.0f;
+        [Tooltip("台パンのクールダウン時間")]
+        [SerializeField] private float slapCooldown = 0.3f;
+        [Tooltip("台パンのキー（スタンドアロン用）")]
+        [SerializeField] private KeyCode slapKey = KeyCode.S;
+
         [Header("References")]
         [SerializeField] private MainNetworkManager networkManager;
 
@@ -73,6 +87,10 @@ namespace BottleFlip.Main.Features
         private string currentBottleId;
         private bool isJudging = false;
 
+        // 台パン用
+        private int _remainingSlapCount = 0;
+        private float _lastSlapTime = 0f;
+
         // デバッグ用
         private Vector3 lastAppliedVelocity;
         private Vector3 lastAppliedAngularVelocity;
@@ -81,6 +99,7 @@ namespace BottleFlip.Main.Features
         // イベント
         public event Action<bool, int> OnFlipResult;
         public event Action<string, string> OnBottleSpawned;
+        public event Action<int> OnTableSlapped; // 残り回数を通知
 
         private void Start()
         {
@@ -92,6 +111,7 @@ namespace BottleFlip.Main.Features
             if (networkManager != null)
             {
                 networkManager.OnThrowReceived += HandleThrowReceived;
+                networkManager.OnTableSlapReceived += HandleTableSlapReceived;
             }
         }
 
@@ -100,6 +120,7 @@ namespace BottleFlip.Main.Features
             if (networkManager != null)
             {
                 networkManager.OnThrowReceived -= HandleThrowReceived;
+                networkManager.OnTableSlapReceived -= HandleTableSlapReceived;
             }
         }
 
@@ -109,6 +130,12 @@ namespace BottleFlip.Main.Features
             if (enableStandaloneInput && Input.GetKeyDown(throwKey))
             {
                 ThrowBottleStandalone();
+            }
+
+            // 母艦アプリ単体での台パン入力
+            if (enableStandaloneInput && Input.GetKeyDown(slapKey))
+            {
+                PerformTableSlap();
             }
         }
 
@@ -143,6 +170,15 @@ namespace BottleFlip.Main.Features
         private void HandleThrowReceived(ThrowData data)
         {
             SpawnAndFlipBottle(data);
+        }
+
+        private void HandleTableSlapReceived(TableSlapData data)
+        {
+            if (logDebugInfo)
+            {
+                Debug.Log($"[BottleFlip] Table slap received from {data.playerName}");
+            }
+            PerformTableSlap();
         }
 
         /// <summary>
@@ -190,6 +226,9 @@ namespace BottleFlip.Main.Features
             // 加速度ベクトルを取得して初速設定
             Vector3 acceleration = data.GetAcceleration();
             ApplyInitialForceFromAcceleration(acceleration, data.intensity);
+
+            // 台パン回数をリセット
+            _remainingSlapCount = maxSlapCount;
 
             // 判定開始
             StartCoroutine(JudgeFlipCoroutine());
@@ -277,6 +316,100 @@ namespace BottleFlip.Main.Features
 
             SpawnAndFlipBottle(testData);
         }
+
+        /// <summary>
+        /// 台パンを実行（机を叩いてボトルを跳ねさせる）
+        /// </summary>
+        public bool PerformTableSlap()
+        {
+            // 判定中でなければ無効
+            if (!isJudging)
+            {
+                if (logDebugInfo)
+                {
+                    Debug.Log("[BottleFlip] Cannot slap - not judging");
+                }
+                return false;
+            }
+
+            // 回数制限チェック
+            if (_remainingSlapCount <= 0)
+            {
+                if (logDebugInfo)
+                {
+                    Debug.Log("[BottleFlip] Cannot slap - no remaining slaps");
+                }
+                return false;
+            }
+
+            // クールダウンチェック
+            if (Time.time - _lastSlapTime < slapCooldown)
+            {
+                if (logDebugInfo)
+                {
+                    Debug.Log("[BottleFlip] Cannot slap - cooldown");
+                }
+                return false;
+            }
+
+            // ボトルが存在しない場合は無効
+            if (currentBottleRb == null)
+            {
+                return false;
+            }
+
+            // 台パン実行
+            ApplyTableSlapForce();
+
+            // 状態更新
+            _remainingSlapCount--;
+            _lastSlapTime = Time.time;
+
+            // イベント発火
+            OnTableSlapped?.Invoke(_remainingSlapCount);
+
+            if (logDebugInfo)
+            {
+                Debug.Log($"[BottleFlip] Table slapped! Remaining: {_remainingSlapCount}");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 台パンの力を適用
+        /// </summary>
+        private void ApplyTableSlapForce()
+        {
+            // 上向きの力（メイン）
+            Vector3 upwardForce = Vector3.up * slapUpwardForce;
+
+            // ランダムな水平方向の力（揺らぎ）
+            float randomX = UnityEngine.Random.Range(-slapHorizontalForceRange, slapHorizontalForceRange);
+            float randomZ = UnityEngine.Random.Range(-slapHorizontalForceRange, slapHorizontalForceRange);
+            Vector3 horizontalForce = new Vector3(randomX, 0, randomZ);
+
+            // 力を適用（インパルス）
+            currentBottleRb.AddForce(upwardForce + horizontalForce, ForceMode.Impulse);
+
+            // ランダムな回転を追加
+            Vector3 randomTorque = new Vector3(
+                UnityEngine.Random.Range(-slapTorqueForce, slapTorqueForce),
+                UnityEngine.Random.Range(-slapTorqueForce * 0.5f, slapTorqueForce * 0.5f),
+                UnityEngine.Random.Range(-slapTorqueForce, slapTorqueForce)
+            );
+            currentBottleRb.AddTorque(randomTorque, ForceMode.Impulse);
+
+            if (logDebugInfo)
+            {
+                Debug.Log($"[BottleFlip] Slap force applied - Up: {upwardForce}, Horizontal: {horizontalForce}, Torque: {randomTorque}");
+            }
+        }
+
+        /// <summary>
+        /// 台パンの残り回数を取得
+        /// </summary>
+        public int RemainingSlapCount => _remainingSlapCount;
 
         private IEnumerator JudgeFlipCoroutine()
         {

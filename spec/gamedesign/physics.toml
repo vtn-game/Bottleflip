@@ -62,3 +62,19 @@ cooldown = 1.0
 
 # 加速度のスムージング係数
 smoothing = 0.5
+
+[table_slap]
+# 台パンの最大回数（1投げあたり）
+max_count = 3
+
+# 台パンで与える上向きの力
+upward_force = 3.0
+
+# 台パンで与えるランダムな水平力の範囲
+horizontal_force_range = 1.0
+
+# 台パンで与える回転力
+torque_force = 2.0
+
+# 台パンのクールダウン時間（秒）
+cooldown = 0.3

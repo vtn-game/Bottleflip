@@ -206,6 +206,28 @@ namespace BottleFlip.Network
         public string playerId;
     }
 
+    /// <summary>
+    /// 台パンメッセージ（机を叩いてボトルを跳ねさせる）
+    /// </summary>
+    [Serializable]
+    public class TableSlapMessage : NetworkMessage
+    {
+        public TableSlapData data;
+
+        public TableSlapMessage()
+        {
+            type = "table_slap";
+            data = new TableSlapData();
+        }
+    }
+
+    [Serializable]
+    public class TableSlapData
+    {
+        public string playerId;
+        public string playerName;
+    }
+
     // ========== サーバーからのメッセージ ==========
 
     /// <summary>
