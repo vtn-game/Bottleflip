@@ -1,0 +1,48 @@
+# Kleio設定ファイルサンプル
+# 実際の設定は kleio.yaml として保存してください
+
+kleio:
+  # APIバージョン
+  api_version: "v1"
+
+  # 検索APIエンドポイント
+  search_endpoint: "https://api.example.com/api/v1/resources/search"
+
+  # リソース取得APIエンドポイント
+  resource_endpoint: "https://api.example.com/api/v1/resources"
+
+  # 認証設定
+  auth:
+    # 認証タイプ: none, api_key, bearer
+    type: "api_key"
+    # APIキーヘッダー名
+    header_name: "X-API-Key"
+    # APIキー（直接記載する場合。環境変数 KLEIO_API_KEY からも取得可能）
+    # key: "your-api-key-here"
+
+  # キャッシュ設定
+  cache:
+    # キャッシュ有効/無効
+    enabled: true
+    # キャッシュディレクトリ名（Application.persistentDataPath からの相対パス）
+    directory: "KleioCache"
+    # 最大キャッシュサイズ（MB）
+    max_size_mb: 500
+    # キャッシュ有効期限（時間）
+    ttl_hours: 24
+
+  # リトライ設定
+  retry:
+    # 最大リトライ回数
+    max_attempts: 3
+    # リトライ間隔（ミリ秒）
+    delay_ms: 1000
+    # バックオフ倍率（リトライごとに delay_ms × backoff_multiplier）
+    backoff_multiplier: 2.0
+
+  # タイムアウト設定
+  timeout:
+    # 接続タイムアウト（ミリ秒）
+    connect_ms: 5000
+    # 読み取りタイムアウト（ミリ秒）
+    read_ms: 30000
